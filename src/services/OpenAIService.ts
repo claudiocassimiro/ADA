@@ -1,33 +1,71 @@
 // src/services/OpenAIService.ts
 
-import axios from "axios"
-import OpenAI from "openai"
+import axios from "axios";
 
-export const API_KEY =
-  process.env.REACT_APP_OPENAI_API_KEY ?? window.prompt("Whats your openai key?")
+interface Token {
+  message: {
+    content: string;
+  };
+}
 
-//process.env.OPENAI_API_KEY
-const openai = API_KEY ? new OpenAI({ apiKey: API_KEY, dangerouslyAllowBrowser: true }) : undefined
+function tokensToText(tokenString: string): string {
+  /**
+   * Transforms a long token string (as returned by the Ollama API) into a text message.
+   *
+   * @param tokenString - A string containing multiple JSON objects.
+   * @returns A string containing the text message.
+   */
+  let text = "";
 
-async function askGPT4(messages: { role: string; content: string }[]): Promise<string | null> {
-  if (!openai) return null
+  // Split the string by the known delimiters
+  const tokens = tokenString.split(/\r?\n/);
+
+  tokens.forEach((token) => {
+    try {
+      if (token.trim() === "" || !token.startsWith("{")) return; // Skip empty strings and invalid JSON
+
+      const message: Token = JSON.parse(token);
+      text += message.message.content;
+    } catch (error) {
+      if (error instanceof SyntaxError) {
+        // Ignore any tokens that aren't valid JSON
+      } else {
+        throw error;
+      }
+    }
+  });
+
+  return text;
+}
+
+async function askGPT4(
+  messages: { role: string; content: string }[]
+): Promise<string | null> {
   try {
     const formattedMessages = messages.map((message) => ({
       role: message.role,
       content: message.content,
-    }))
+    }));
 
-    const completion = await openai.chat.completions.create({
-      //@ts-ignore
-      messages: formattedMessages,
-      model: "gpt-4",
-    })
+    const completion = await axios.post(
+      "http://localhost:3000/api/chat",
+      {
+        model: "phi3",
+        messages: formattedMessages,
+      },
+      {
+        headers: {
+          Authorization: "Bearer user1:0XAXAXAQX5A1F",
+          "Content-Type": "application/json",
+        },
+      }
+    );
 
-    return completion.choices[0].message.content
+    return tokensToText(completion?.data);
   } catch (error) {
-    console.error("Error calling OpenAI API:", error)
-    throw error
+    console.error("Error calling OpenAI API:", error);
+    throw error;
   }
 }
 
-export { askGPT4 }
+export { askGPT4 };
