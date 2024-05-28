@@ -24,7 +24,7 @@ function App() {
     mf.current.mathVirtualKeyboardPolicy = "manual";
     mf.current.addEventListener("focusin", (evt: any) => {
       window.mathVirtualKeyboard.show();
-      window.mathVirtualKeyboard.layouts = ["compact"];
+      window.mathVirtualKeyboard.layouts = ["numeric", "symbols"];
     });
     mf.current.addEventListener("focusout", (evt: any) =>
       window.mathVirtualKeyboard.hide()
