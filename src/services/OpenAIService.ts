@@ -50,7 +50,7 @@ async function askGPT4(
     const completion = await axios.post(
       "http://localhost:3000/api/chat",
       {
-        model: "phi3",
+        model: "llama3",
         messages: formattedMessages,
       },
       {
