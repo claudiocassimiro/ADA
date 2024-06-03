@@ -2,8 +2,8 @@ import React, { useState, useEffect, useRef } from "react";
 import { askGPT4 } from "../services/OpenAIService";
 import "./Chatbot.css";
 import "katex/dist/katex.min.css";
-import Latex from "react-latex-next";
 import { mathTeacher } from "../prompts/mathTeacher";
+import MarkdownLaTeXRenderer from "./MarkdownLaTeXRenderer";
 
 const messagesStored = JSON.parse(
   localStorage.getItem("child-bot-history") ?? "[]"
@@ -115,12 +115,12 @@ const Chatbot = ({ value }: ChatbotProps) => {
               }
             >
               <b className="message-role"> {message.role}</b>{" "}
-              <Latex>
-                {`${message.content.replace(
+              <MarkdownLaTeXRenderer
+                content={`${message.content.replace(
                   /(?<!\d)\.|\:/g,
                   (match) => match + "<br><br>"
                 )}`}
-              </Latex>
+              />
             </div>
           ))}
       </div>
