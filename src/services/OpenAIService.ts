@@ -3,12 +3,17 @@
 import axios from "axios";
 
 interface Token {
+  model?: string;
+  created_at?: string;
   message: {
+    role: string;
     content: string;
   };
+  done?: boolean;
 }
 
 function tokensToText(tokenString: string): string {
+  console.log(tokenString);
   /**
    * Transforms a long token string (as returned by the Ollama API) into a text message.
    *
@@ -17,25 +22,37 @@ function tokensToText(tokenString: string): string {
    */
   let text = "";
 
-  // Split the string by the known delimiters
-  const tokens = tokenString.split(/\r?\n/);
+  // Split the string by lines
+  const lines = tokenString.split(/\r?\n/);
 
-  tokens.forEach((token) => {
+  console.log(lines);
+
+  lines.forEach((line) => {
     try {
-      if (token.trim() === "" || !token.startsWith("{")) return; // Skip empty strings and invalid JSON
+      if (
+        line.trim() === "" ||
+        // !line.startsWith("{") ||
+        line.startsWith("400")
+      ) {
+        return;
+      }
+      // Parse the line as JSON
+      const message: Token = JSON.parse(line);
 
-      const message: Token = JSON.parse(token);
-      text += message.message.content;
+      // Append the content of the message to the text
+      if (message.message && message.message.content) {
+        text += message.message.content;
+      }
     } catch (error) {
       if (error instanceof SyntaxError) {
-        // Ignore any tokens that aren't valid JSON
+        // Ignore any lines that aren't valid JSON
       } else {
         throw error;
       }
     }
   });
-
-  return text;
+  // Return the combined text with whitespace normalization
+  return text.replace(/  +/g, " ").trim();
 }
 
 async function askGPT4(
@@ -48,10 +65,11 @@ async function askGPT4(
     }));
 
     const completion = await axios.post(
-      "http://localhost:3000/api/chat",
+      "https://7b04-2804-7f7-df00-4c6a-b008-447d-c4e-bb64.ngrok-free.app/api/chat",
       {
-        model: "llama3",
+        model: "llama3:latest",
         messages: formattedMessages,
+        stream: false,
       },
       {
         headers: {
